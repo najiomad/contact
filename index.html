@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Firebase Chat App</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js"></script>
+    </head>
+    <body>
+        <h1>Firebase Chat App</h1>
+        <div id="login-form">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button id="login-btn">Login</button>
+        </div>
+        <div id="chat-box" style="display: none;">
+            <div id="message-list"></div>
+            <input type="text" id="message-input">
+            <button id="send-btn">Send</button>
+        </div>
+        <script>
+            const firebaseConfig = {
+                apiKey: "AIzaSyDbG5eMdG_WmgCDq1NzEezP3PaDKBxx0ng",
+                authDomain: "najio-mad.firebaseapp.com",
+                projectId: "najio-mad",
+                storageBucket: "najio-mad.appspot.com",
+                messagingSenderId: "669175756950",
+                appId: "1:669175756950:web:77a3b570c4df078c01aab7",
+                measurementId: "G-L746DNJZDM"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            var loginForm = document.getElementById('login-form');
+            var chatBox = document.getElementById('chat-box');
+            var messageList = document.getElementById('message-list');
+            var messageInput = document.getElementById('message-input');
+            var loginBtn = document.getElementById('login-btn');
+            var sendBtn = document.getElementById('send-btn');
+
+            loginBtn.addEventListener('click', function() {
+                var email = document.getElementById('email').value;
+                var password = document.getElementById('password').value;
+                firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(function() {
+                    loginForm.style.display = 'none';
+                    chatBox.style.display = 'block';
+                })
+                .catch(function(error) {
+                    alert(error.message);
+                });
+            });
+
+            sendBtn.addEventListener('click', function() {
+                var message = messageInput.value;
+                var user = firebase.auth().currentUser;
+                var name = user.displayName || user.email;
+                db.collection('messages').add({
+                    name: name,
+                    message: message,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(function(docRef) {
+                    messageInput.value = '';
+                })
+                .catch(function(error) {
+                    alert(error.message);
+                });
+            });
+
+            db.collection('messages').orderBy('timestamp', 'desc').limit(10)
+            .onSnapshot(function(snapshot) {
+                snapshot.docChanges().forEach(function(change) {
+                    if (change.type === 'added') {
+                        var message = change.doc.data();
+                        var messageElement = document.createElement('div');
+                        messageElement.innerText = message.name + ': ' + message.message;
+                        messageList.appendChild(messageElement);
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
